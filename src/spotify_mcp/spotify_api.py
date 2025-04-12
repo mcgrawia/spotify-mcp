@@ -66,6 +66,13 @@ class Client:
             raise ValueError("No search results found.")
         return utils.parse_search_results(results, qtype, self.username)
 
+    @utils.validate
+    def current_user_playlists(self, limit: int = 50, offset: int = 0):
+        results = self.sp.current_user_playlists(limit=limit, offset=offset)
+        if not results:
+            raise ValueError("No playlists found.")
+        return results
+
     def recommendations(self, artists: Optional[List] = None, tracks: Optional[List] = None, limit=20):
         # doesnt work
         recs = self.sp.recommendations(seed_artists=artists, seed_tracks=tracks, limit=limit)
@@ -229,7 +236,7 @@ class Client:
             if token is None:
                 self.logger.info("Auth check result: no token exists")
                 return False
-                
+
             is_expired = self.auth_manager.is_token_expired(token)
             self.logger.info(f"Auth check result: {'valid' if not is_expired else 'expired'}")
             return not is_expired  # Return True if token is NOT expired

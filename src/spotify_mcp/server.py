@@ -32,8 +32,9 @@ def setup_logger():
 logger = setup_logger()
 spotify_client = spotify_api.Client(logger)
 
-
 server = Server("spotify-mcp")
+
+
 # options =
 class ToolModel(BaseModel):
     @classmethod
@@ -82,6 +83,12 @@ class Search(ToolModel):
     limit: Optional[int] = Field(default=10, description="Maximum number of items to return")
 
 
+class GetMyPlaylists(ToolModel):
+    """Look up the current user's playlists from their account."""
+    limit: Optional[int] = Field(default=10, description="Maximum number of playlists to return")
+    offset: Optional[int] = Field(default=0, description="Offset from which to start the playlists.")
+
+
 @server.list_prompts()
 async def handle_list_prompts() -> list[types.Prompt]:
     return []
@@ -96,9 +103,10 @@ async def handle_list_resources() -> list[types.Resource]:
 async def handle_list_tools() -> list[types.Tool]:
     """List available tools."""
     logger.info("Listing available tools")
-    # await server.request_context.session.send_notification("are you recieving this notification?")
+    # await server.request_context.session.send_notification("are you receiving this notification?")
     tools = [
         Playback.as_tool(),
+        GetMyPlaylists.as_tool(),
         Search.as_tool(),
         Queue.as_tool(),
         GetInfo.as_tool(),
@@ -169,6 +177,18 @@ async def handle_call_tool(
                 return [types.TextContent(
                     type="text",
                     text=json.dumps(search_results, indent=2)
+                )]
+
+            case "GetMyPlaylists":
+                logger.info(f"Looking up users playlists with arguments: {arguments}")
+                results = spotify_client.current_user_playlists(
+                    limit=arguments.get("limit", 10),
+                    offset=arguments.get("offset", 0),
+                )
+                logger.info("Lookup completed successfully.")
+                return [types.TextContent(
+                    type="text",
+                    text=json.dumps(results, indent=2)
                 )]
 
             case "Queue":
